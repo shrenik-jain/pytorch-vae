@@ -5,6 +5,83 @@ from torch.nn import functional as F
 from .types_ import *
 
 
+# class VanillaVAE(BaseVAE):
+
+
+#     def __init__(self,
+#                  in_channels: int,
+#                  latent_dim: int,
+#                  hidden_dims: List = None,
+#                  input_size: int = 128,
+#                  **kwargs) -> None:
+#         super(VanillaVAE, self).__init__()
+
+#         self.latent_dim = latent_dim
+
+#         modules = []
+#         if hidden_dims is None:
+#             hidden_dims = [32, 64, 128, 256, 512]
+
+#         # Build Encoder
+#         for h_dim in hidden_dims:
+#             modules.append(
+#                 nn.Sequential(
+#                     nn.Conv2d(in_channels, out_channels=h_dim,
+#                               kernel_size= 3, stride= 2, padding  = 1),
+#                     nn.BatchNorm2d(h_dim),
+#                     nn.LeakyReLU())
+#             )
+#             in_channels = h_dim
+
+#         self.encoder = nn.Sequential(*modules)
+#         # self.fc_mu = nn.Linear(hidden_dims[-1]*4, latent_dim)
+#         # self.fc_var = nn.Linear(hidden_dims[-1]*4, latent_dim)
+
+#         feature_size = input_size // (2 ** len(hidden_dims))
+#         flattened_dim = hidden_dims[-1] * feature_size * feature_size
+        
+#         self.fc_mu = nn.Linear(flattened_dim, latent_dim)
+#         self.fc_var = nn.Linear(flattened_dim, latent_dim)
+
+#         # Build Decoder
+#         modules = []
+
+#         # self.decoder_input = nn.Linear(latent_dim, hidden_dims[-1] * 4)
+#         self.decoder_input = nn.Linear(latent_dim, hidden_dims[-1] * feature_size * feature_size)
+#         self.feature_size = feature_size
+
+#         hidden_dims.reverse()
+
+#         for i in range(len(hidden_dims) - 1):
+#             modules.append(
+#                 nn.Sequential(
+#                     nn.ConvTranspose2d(hidden_dims[i],
+#                                        hidden_dims[i + 1],
+#                                        kernel_size=3,
+#                                        stride = 2,
+#                                        padding=1,
+#                                        output_padding=1),
+#                     nn.BatchNorm2d(hidden_dims[i + 1]),
+#                     nn.LeakyReLU())
+#             )
+
+
+
+#         self.decoder = nn.Sequential(*modules)
+
+#         self.final_layer = nn.Sequential(
+#                             nn.ConvTranspose2d(hidden_dims[-1],
+#                                                hidden_dims[-1],
+#                                                kernel_size=3,
+#                                                stride=2,
+#                                                padding=1,
+#                                                output_padding=1),
+#                             nn.BatchNorm2d(hidden_dims[-1]),
+#                             nn.LeakyReLU(),
+#                             nn.Conv2d(hidden_dims[-1], out_channels= 3,
+#                                       kernel_size= 3, padding= 1),
+#                             nn.Tanh())
+
 class VanillaVAE(BaseVAE):
 
 
@@ -12,11 +89,12 @@ class VanillaVAE(BaseVAE):
                  in_channels: int,
                  latent_dim: int,
                  hidden_dims: List = None,
-                 input_size: int = 128,
+                 input_size: int = 128,  # Add input_size parameter, default to 64
                  **kwargs) -> None:
         super(VanillaVAE, self).__init__()
 
         self.latent_dim = latent_dim
+        self.input_size = 128
 
         modules = []
         if hidden_dims is None:
@@ -34,9 +112,10 @@ class VanillaVAE(BaseVAE):
             in_channels = h_dim
 
         self.encoder = nn.Sequential(*modules)
-        # self.fc_mu = nn.Linear(hidden_dims[-1]*4, latent_dim)
-        # self.fc_var = nn.Linear(hidden_dims[-1]*4, latent_dim)
-
+        
+        # Calculate feature dimensions based on input size
+        # For 64×64 input → 2×2 feature maps
+        # For 128×128 input → 4×4 feature maps
         feature_size = input_size // (2 ** len(hidden_dims))
         flattened_dim = hidden_dims[-1] * feature_size * feature_size
         
@@ -46,9 +125,8 @@ class VanillaVAE(BaseVAE):
         # Build Decoder
         modules = []
 
-        # self.decoder_input = nn.Linear(latent_dim, hidden_dims[-1] * 4)
         self.decoder_input = nn.Linear(latent_dim, hidden_dims[-1] * feature_size * feature_size)
-        self.feature_size = feature_size
+        self.feature_size = feature_size  # Store for reshape in decode method
 
         hidden_dims.reverse()
 
@@ -64,8 +142,6 @@ class VanillaVAE(BaseVAE):
                     nn.BatchNorm2d(hidden_dims[i + 1]),
                     nn.LeakyReLU())
             )
-
-
 
         self.decoder = nn.Sequential(*modules)
 
