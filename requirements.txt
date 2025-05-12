@@ -2,7 +2,8 @@
 pytorch-lightning
 torchmetrics
 torch-fidelity
-PyYAML==6.0
+# PyYAML==6.0
+PyYAML
 tensorboard>=2.2.0
 torch>=1.6.1
 torchsummary==1.5.1
